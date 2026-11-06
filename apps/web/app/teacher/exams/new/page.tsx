@@ -5,7 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { QUESTION_TYPES } from "@/components/teacher/question-editor";
@@ -52,15 +52,19 @@ export default function NewExam() {
       instructions: "Answer all questions.\nWrite the question number clearly before each answer.\nNumber every page of your answer booklet.", generation_notes: "", duplicate_policy: "replace" },
   });
   const rows = useFieldArray({ control: f.control, name: "mark_distribution" });
-  const v = f.watch();
+  const v = useWatch({ control: f.control }) as Form;
   const sid = v.subject_id || "";
-  const topics = useApiQuery<{ items: string[] }>(["topics", sid], sid ? `/subjects/${sid}/topics` : null);
-  const docs = useApiQuery<Page<Material>>(["documents", sid, "indexed"], sid ? `/documents?subject_id=${sid}&status=indexed` : null);
+  const topics = useApiQuery<{ items: string[] }>(["topics", sid], sid ? `/subjects/${sid}/topics` : null, { staleTime: 0, refetchOnMount: "always" });
+  const docs = useApiQuery<Page<Material>>(["documents", sid, "indexed"], sid ? `/documents?subject_id=${sid}&status=indexed` : null, { staleTime: 0, refetchOnMount: "always" });
   const e = f.formState.errors;
   const sum = (v.mark_distribution ?? []).reduce((s, r) => s + Number(r.marks || 0) * Number(r.count || 0), 0);
   const fieldsByStep: (keyof Form)[][] = [["title", "subject_id", "duration_minutes"], ["topics", "material_ids"], ["total_marks", "mark_distribution", "question_types", "difficulty"], []];
 
-  async function next() { if (await f.trigger(fieldsByStep[step])) setStep((s) => s + 1); }
+  async function next() {
+    if (!(await f.trigger(fieldsByStep[step]))) return;
+    if (step === 0) { topics.refetch(); docs.refetch(); } // indexing may have finished since the subject was chosen
+    setStep((s) => s + 1);
+  }
   const toggle = (key: "topics" | "material_ids" | "question_types", val: string) => {
     const cur = (f.getValues(key) as string[]) ?? [];
     f.setValue(key, cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val], { shouldValidate: true });

@@ -148,6 +148,8 @@ export default function ExamPage() {
   if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
   const e = q.data!;
   const editable = e.status === "draft" || e.status === "review";
+  const prePublish = editable || e.status === "generating";
+  const tab = prePublish ? "paper" : "submissions";
   const mismatch = e.computed_total !== undefined && Math.abs(e.computed_total - e.total_marks) > 1e-6;
   const openPdf = async () => {
     setPdfBusy(true);
@@ -176,14 +178,14 @@ export default function ExamPage() {
       )}
       {mismatch && editable && <p className="mb-4 text-sm text-mark">Questions add up to {e.computed_total} marks but the paper is set to {e.total_marks}. Adjust marks or recalculate the total before publishing.</p>}
 
-      <Tabs defaultValue={editable ? "paper" : "submissions"}>
-        <TabsList><TabsTrigger value="paper">Paper ({e.questions.length})</TabsTrigger>{!editable && <TabsTrigger value="submissions">Submissions</TabsTrigger>}<TabsTrigger value="calibration">Consistency</TabsTrigger></TabsList>
+      <Tabs key={tab} defaultValue={tab}>
+        <TabsList><TabsTrigger value="paper">Paper ({e.questions.length})</TabsTrigger>{!prePublish && <TabsTrigger value="submissions">Submissions</TabsTrigger>}<TabsTrigger value="calibration">Consistency</TabsTrigger></TabsList>
         <TabsContent value="paper" className="space-y-3">
           {!e.questions.length && e.status !== "generating" ? <EmptyState title="No questions yet" body="Generate the paper from your documents or add questions by hand." action={<div className="flex gap-2"><Button variant="secondary" loading={generate.isPending} onClick={() => generate.mutate({ path: `/examinations/${id}/generate` })}>Generate paper</Button><Button onClick={() => setAdding(true)}>Add question</Button></div>} />
             : e.questions.map((x) => <QuestionCard key={x.id} q={x} editable={editable} examId={id} />)}
           {editable && e.questions.length > 0 && <Button variant="secondary" onClick={() => setAdding(true)}><Plus className="h-4 w-4" />Add question</Button>}
         </TabsContent>
-        {!editable && <TabsContent value="submissions"><Submissions examId={id} max={e.total_marks} /></TabsContent>}
+        {!prePublish && <TabsContent value="submissions"><Submissions examId={id} max={e.total_marks} /></TabsContent>}
         <TabsContent value="calibration"><Calibration exam={e} /></TabsContent>
       </Tabs>
       <Dialog open={adding} onOpenChange={setAdding}>
