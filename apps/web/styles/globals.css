@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import "@fontsource-variable/schibsted-grotesk";
+@import "@fontsource/caveat/500.css";
+
+/* Tokens. Mark red is reserved for grading marks and review flags; nothing decorative uses it. */
+@theme {
+  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-hand: "Caveat", "Segoe Print", cursive;
+  --color-paper: #ffffff;
+  --color-canvas: #f5f6f9;
+  --color-ink: #141a2e;
+  --color-muted: #5b6478;
+  --color-line: #e3e6ee;
+  --color-primary: #3730a3;
+  --color-primary-hover: #2e2888;
+  --color-primary-soft: #eef0ff;
+  --color-mark: #c0261b;
+  --color-mark-soft: #fdeeec;
+  --color-success: #047857;
+  --color-success-soft: #e7f6f0;
+  --color-warning: #b45309;
+  --color-warning-soft: #fdf3e3;
+  --radius-card: 14px;
+  --radius-control: 9px;
+}
+
+@layer base {
+  html { color-scheme: light; }
+  body { @apply bg-canvas text-ink antialiased; font-feature-settings: "ss01", "tnum"; }
+  h1, h2, h3 { letter-spacing: -0.015em; }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+}
+
+.ruled-paper {
+  background-color: #fffdf7;
+  background-image: linear-gradient(#e8ecf6 1px, transparent 1px);
+  background-size: 100% 34px;
+}

@@ -59,7 +59,7 @@ def _store_report(db: Session, e: Evaluation, report: EvaluationReport) -> None:
 def _empty_report(q: ExaminationQuestion, rubric: Rubric, *, reasons: list[str], marks: float | None, feedback: str) -> EvaluationReport:
     from ai_engine.schemas import CriterionResult
     crit = [CriterionResult(criterion_id=str(c.id), criterion=c.criterion, category=c.category, max_marks=float(c.max_marks), awarded_marks=0, reason=feedback)
-            for c in rubric.criteria] if marks is not None else []
+            for c in rubric.criteria]  # present even when unmarked, so a teacher can mark against the rubric
     return EvaluationReport(question_number=q.question_number, max_marks=float(q.marks), marks_awarded=marks, confidence=0, criteria=crit,
                             missing_points=q.expected_concepts if marks is not None else [], overall_feedback=feedback,
                             requires_human_review=bool(reasons), review_reasons=reasons)
