@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, Card, ErrorState, Field, Input, LoadingBlock, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { useMe } from "@/hooks/use-me";
 import { useApiMutation, useApiQuery } from "@/lib/api";
+import { label } from "@/lib/utils";
 
 type O = { institution: string; users: Record<string, number>; examinations: Record<string, number>; subjects: number; submissions: number; results: number;
   evaluation_quality: { evaluations: number; average_confidence: number | null; flagged_for_review: number; changed_by_teachers: number } };
@@ -23,6 +24,25 @@ function Institutions() {
         <Field label="Short name">{(id) => <Input id={id} value={slug} onChange={(e) => setSlug(e.target.value)} pattern="[a-z0-9-]{2,80}" required />}</Field>
         <Button type="submit" loading={create.isPending}>Create institution</Button>
       </form>
+    </Card>
+  );
+}
+
+type Cfg = { environment: string; storage_provider: string; integrations: Record<string, boolean>; models: Record<string, string | null>; limits: Record<string, number> };
+
+function Configuration() {
+  const q = useApiQuery<Cfg>(["admin-config"], "/admin/configuration");
+  if (!q.data) return null;
+  const d = q.data;
+  return (
+    <Card className="p-5 lg:col-span-2">
+      <h2 className="font-semibold">Platform configuration</h2>
+      <p className="mt-1 text-sm text-muted">Set through environment variables on the API (see docs/DEPLOYMENT.md). Secrets are never shown.</p>
+      <div className="mt-4 grid gap-6 text-sm md:grid-cols-3">
+        <ul className="space-y-1.5">{Object.entries(d.integrations).map(([k, v]) => <li key={k} className="flex justify-between gap-3"><span>{label(k)}</span><span className={v ? "text-success" : "text-mark"}>{v ? "Configured" : "Missing"}</span></li>)}</ul>
+        <ul className="space-y-1.5">{Object.entries(d.models).map(([k, v]) => <li key={k} className="flex justify-between gap-3"><span>{label(k)} model</span><span className="text-muted">{v ?? "not set"}</span></li>)}<li className="flex justify-between"><span>Storage</span><span className="text-muted">{d.storage_provider}</span></li></ul>
+        <ul className="space-y-1.5">{Object.entries(d.limits).map(([k, v]) => <li key={k} className="flex justify-between gap-3"><span>{label(k)}</span><span className="tabular-nums text-muted">{v}</span></li>)}</ul>
+      </div>
     </Card>
   );
 }
@@ -55,6 +75,7 @@ export default function AdminHome() {
             <div><dt className="text-muted">Changed by teachers</dt><dd className="text-xl font-semibold tabular-nums">{q.changed_by_teachers}</dd></div>
           </dl>
         </Card>
+        <Configuration />
         {me.data?.is_platform_admin && <div className="lg:col-span-2"><Institutions /></div>}
       </div>
     </>

@@ -94,6 +94,8 @@ def evaluate_submission(db: Session, submission_id: UUID, *, force: bool = False
     if sub is None or not sub.is_current:
         return {"skipped": "superseded"}
     sub.status = SubmissionStatus.evaluating.value
+    notify(db, sub.student_id, "evaluation_started", "Evaluation started", f"{sub.examination.title}: your answers are being marked. "
+           "Marks appear after your teacher approves them.", f"/student/exams/{sub.examination_id}", sub.institution_id)
     db.commit()
     ai = get_ai()
     questions = db.scalars(select(ExaminationQuestion).where(ExaminationQuestion.examination_id == sub.examination_id).order_by(ExaminationQuestion.question_number)).all()

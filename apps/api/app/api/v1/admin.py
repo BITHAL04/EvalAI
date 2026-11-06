@@ -69,3 +69,16 @@ def create_institution(body: InstitutionIn, claims: TokenClaims = Depends(get_cl
     audit(db, "institution.created", "institution", i.id, actor_id=u.id, institution_id=i.id, after={"name": i.name})
     db.commit()
     return {"id": str(i.id), "name": i.name, "slug": i.slug}
+
+
+@router.get("/configuration")
+def configuration(p: Principal = Depends(admin_only)):
+    """Which integrations are configured, and the active thresholds. Never returns secret values."""
+    from app.core.config import get_settings
+    s = get_settings()
+    return {"environment": s.environment, "storage_provider": s.storage_provider,
+            "integrations": {"database": bool(s.database_url), "clerk": bool(s.clerk_jwks_url and s.clerk_issuer), "clerk_backend_api": bool(s.clerk_secret_key),
+                             "supabase_storage": bool(s.supabase_url and s.supabase_service_role_key), "gemini": bool(s.gemini_api_key and s.gemini_model and s.gemini_embedding_model)},
+            "models": {"generation": s.gemini_model or None, "vision": s.gemini_vision_model or s.gemini_model or None, "embedding": s.gemini_embedding_model or None},
+            "limits": {"max_upload_size_mb": s.max_upload_size_mb, "max_answer_sheet_pages": s.max_answer_sheet_pages, "ai_rate_limit_per_minute": s.ai_rate_limit_per_minute,
+                       "signed_url_ttl_seconds": s.signed_url_ttl_seconds, "ocr_review_threshold": s.ocr_review_threshold, "evaluation_review_threshold": s.evaluation_review_threshold}}

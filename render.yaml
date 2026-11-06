@@ -1,0 +1,63 @@
+# Render blueprint: API web service + persistent job worker sharing one environment group.
+envVarGroups:
+  - name: evalai-backend
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: STORAGE_PROVIDER
+        value: supabase
+      - key: DATABASE_URL
+        sync: false
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: evalai-private
+      - key: CLERK_ISSUER
+        sync: false
+      - key: CLERK_JWKS_URL
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_AUTHORIZED_PARTIES
+        sync: false
+      - key: BOOTSTRAP_ADMIN_EMAILS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: GEMINI_EMBEDDING_MODEL
+        sync: false
+      - key: APP_SIGNING_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.7
+
+services:
+  - type: web
+    name: evalai-api
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r apps/api/requirements.txt
+    preDeployCommand: cd apps/api && alembic upgrade head
+    startCommand: cd apps/api && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: evalai-backend
+      - key: PUBLIC_API_URL
+        sync: false
+
+  - type: worker
+    name: evalai-worker
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r apps/api/requirements.txt
+    startCommand: cd apps/api && python -m app.worker
+    envVars:
+      - fromGroup: evalai-backend

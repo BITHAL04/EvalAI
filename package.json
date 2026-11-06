@@ -1,0 +1,14 @@
+{
+  "name": "evalai",
+  "private": true,
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "test:web": "npm --workspace apps/web run test",
+    "typecheck": "npm --workspace apps/web run typecheck",
+    "lint": "npm --workspace apps/web run lint",
+    "test:api": "cd apps/api && python -m pytest",
+    "e2e": "bash scripts/e2e_stack.sh up && npm --workspace apps/web run e2e; bash scripts/e2e_stack.sh down"
+  }
+}

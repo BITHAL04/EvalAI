@@ -101,7 +101,8 @@ def regenerate_question(db: Session, question_id: UUID) -> dict:
 def render_exam_pdf(db: Session, exam: Examination) -> str:
     inst = db.get(Institution, exam.institution_id)
     pdf = render_paper(PaperData(institution=inst.name, title=exam.title, subject=exam.subject.name, duration_minutes=exam.duration_minutes,
-                                 max_marks=float(exam.total_marks), instructions=exam.instructions,
+                                 max_marks=float(exam.total_marks),
+                                 instructions=exam.instructions + ("\nNegative marking applies to incorrect statements." if exam.negative_marking else ""),
                                  questions=[(q.question_number, q.question_text, float(q.marks)) for q in exam.questions]))
     path = f"{exam.institution_id}/papers/{exam.id}.pdf"
     get_storage().write(path, pdf, "application/pdf")
